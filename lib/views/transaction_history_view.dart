@@ -16,15 +16,18 @@ class _TransactionHistoryViewState extends ConsumerState<TransactionHistoryView>
   @override
   Widget build(BuildContext context) {
     final txState = ref.watch(transactionProvider(widget.userId));
-    
     final filteredList = txState.transactions.where((tx) {
       if (_selectedFilter == 'Entradas') return tx.type == 'Entrada';
-      if (_selectedFilter == 'Saídas') return tx.type == 'Saída';
+      if (_selectedFilter == 'Saidas') return tx.type == 'Saída';
       return true;
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Histórico Operacional')),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1B3A5C),
+        title: const Text('Histórico', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       body: Column(
         children: [
           Padding(
@@ -33,19 +36,15 @@ class _TransactionHistoryViewState extends ConsumerState<TransactionHistoryView>
               segments: const [
                 ButtonSegment(value: 'Todos', label: Text('Todos')),
                 ButtonSegment(value: 'Entradas', label: Text('Entradas')),
-                ButtonSegment(value: 'Saídas', label: Text('Saídas')),
+                ButtonSegment(value: 'Saidas', label: Text('Saídas')),
               ],
               selected: {_selectedFilter},
-              onSelectionChanged: (newSelection) {
-                setState(() {
-                  _selectedFilter = newSelection.first;
-                });
-              },
+              onSelectionChanged: (s) => setState(() => _selectedFilter = s.first),
             ),
           ),
           Expanded(
             child: filteredList.isEmpty
-                ? const Center(child: Text('Nenhum registro encontrado para este filtro.'))
+                ? const Center(child: Text('Nenhum registro encontrado.'))
                 : ListView.builder(
                     itemCount: filteredList.length,
                     itemBuilder: (context, index) {
@@ -56,21 +55,24 @@ class _TransactionHistoryViewState extends ConsumerState<TransactionHistoryView>
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: isIncome ? Colors.green[100] : Colors.red[100],
-                            child: Icon(isIncome ? Icons.keyboard_double_arrow_up : Icons.keyboard_double_arrow_down, color: isIncome ? Colors.green[800] : Colors.red[800]),
+                            child: Icon(
+                              isIncome ? Icons.keyboard_double_arrow_up : Icons.keyboard_double_arrow_down,
+                              color: isIncome ? Colors.green[800] : Colors.red[800],
+                            ),
                           ),
                           title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('Categoria: ${item.category} • ${item.date.day}/${item.date.month}/${item.date.year}'),
+                          subtitle: Text('\${item.category} • \${item.date}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('R\$ ${item.amount.toStringAsFixed(2)}', style: TextStyle(color: isIncome ? Colors.green[700] : Colors.red[700], fontWeight: FontWeight.bold, fontSize: 15)),
-                              const SizedBox(width: 8),
+                              Text(
+                                'R\$ ${item.amount.toStringAsFixed(2).replaceAll(".", ",")}',
+                                style: TextStyle(color: isIncome ? Colors.green[700] : Colors.red[700], fontWeight: FontWeight.bold),
+                              ),
                               IconButton(
                                 icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
-                                onPressed: () {
-                                  ref.read(transactionProvider(widget.userId).notifier).removeTransaction(item.id!);
-                                },
-                              )
+                                onPressed: () => ref.read(transactionProvider(widget.userId).notifier).removeTransaction(item.id!),
+                              ),
                             ],
                           ),
                         ),

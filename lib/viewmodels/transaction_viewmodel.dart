@@ -4,98 +4,94 @@ import '../data/database/db_helper.dart';
 
 class TransactionState {
   final List<TransactionModel> transactions;
+  final double balance;
   final double totalIncome;
   final double totalExpense;
-  final double balance;
   final bool isLoading;
+  final String? errorMessage;
 
-  TransactionState({
+  const TransactionState({
     required this.transactions,
+    required this.balance,
     required this.totalIncome,
     required this.totalExpense,
-    required this.balance,
     required this.isLoading,
+    this.errorMessage,
   });
 
-  factory TransactionState.initial() => TransactionState(
+  factory TransactionState.initial() => const TransactionState(
         transactions: [],
+        balance: 0.0,
         totalIncome: 0.0,
         totalExpense: 0.0,
-        balance: 0.0,
-        isLoading: false,
+        isLoading: true,
       );
 
   TransactionState copyWith({
     List<TransactionModel>? transactions,
+    double? balance,
     double? totalIncome,
     double? totalExpense,
-    double? balance,
     bool? isLoading,
+    String? errorMessage,
   }) {
     return TransactionState(
       transactions: transactions ?? this.transactions,
+      balance: balance ?? this.balance,
       totalIncome: totalIncome ?? this.totalIncome,
       totalExpense: totalExpense ?? this.totalExpense,
-      balance: balance ?? this.balance,
       isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage,
     );
   }
 }
 
 class TransactionNotifier extends StateNotifier<TransactionState> {
-  final int _userId;
+  final int userId;
+  final DBHelper _dbHelper = DBHelper.instance;
 
-  TransactionNotifier(this._userId) : super(TransactionState.initial()) {
+  TransactionNotifier(this.userId) : super(TransactionState.initial()) {
     loadTransactions();
   }
 
   Future<void> loadTransactions() async {
-    state = state.copyWith(isLoading: true);
-    final rawData = await DBHelper.instance.queryTransactionsByUser(_userId);
-    final list = rawData.map((m) => TransactionModel.fromMap(m)).toList();
-
-    double income = 0;
-    double expense = 0;
-    for (var tx in list) {
-      if (tx.type == 'Entrada') {
-        income += tx.amount;
-      } else {
-        expense += tx.amount;
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final txMaps = await _dbHelper.queryTransactionsByUser(userId);
+      final txList = txMaps.map(TransactionModel.fromMap).toList();
+      double income = 0.0;
+      double expense = 0.0;
+      for (final tx in txList) {
+        if (tx.type == 'Entrada') { income += tx.amount; } else { expense += tx.amount; }
       }
+      state = TransactionState(
+        transactions: txList,
+        totalIncome: income,
+        totalExpense: expense,
+        balance: income - expense,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: 'Erro: \$e');
     }
-
-    state = state.copyWith(
-      transactions: list,
-      totalIncome: income,
-      totalExpense: expense,
-      balance: income - expense,
-      isLoading: false,
-    );
   }
 
   Future<void> addTransaction(String title, double amount, String type, String category) async {
     final newTx = TransactionModel(
-      userId: _userId,
-      title: title,
-      amount: amount,
-      date: DateTime.now(),
-      type: type,
-      category: category,
+      userId: userId, title: title, amount: amount, type: type, category: category,
+      date: DateTime.now().toIso8601String().split('T')[0],
     );
-
-    await DBHelper.instance.insertTransaction(newTx.toMap());
+    await _dbHelper.insertTransaction(newTx.toMap());
     await loadTransactions();
   }
 
   Future<void> removeTransaction(int id) async {
-    await DBHelper.instance.deleteTransaction(id);
+    await _dbHelper.deleteTransaction(id);
     await loadTransactions();
   }
 }
 
-final transactionProvider = StateNotifierProvider.family<TransactionNotifier, TransactionState, int>((ref, userId) {
-  return TransactionNotifier(userId);
-});
-
-// Provedor para gerenciar o ID do usuário autenticado globalmente
-final authUserIdProvider = StateProvider<int>((ref) => 1);
+final transactionProvider =
+    StateNotifierProvider.family<TransactionNotifier, TransactionState, int>(
+  (ref, userId) => TransactionNotifier(userId),
+);

@@ -303,7 +303,7 @@ class _DashboardViewState extends ConsumerState<DashboardView>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Total guardado em Poupanca:', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              Text('R\$ \${totalSaved.toStringAsFixed(2)}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.green[700])),
+              Text('R\$ ${totalSaved.toStringAsFixed(2)}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.green[700])),
             ],
           ),
         ],

@@ -11,6 +11,7 @@ class TransactionHistoryView extends ConsumerStatefulWidget {
 }
 
 class _TransactionHistoryViewState extends ConsumerState<TransactionHistoryView> {
+
   String _selectedFilter = 'Todos';
 
   @override
@@ -61,7 +62,7 @@ class _TransactionHistoryViewState extends ConsumerState<TransactionHistoryView>
                             ),
                           ),
                           title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('${item.category} • ${item.date}'),
+                          subtitle: Text('\${item.category} • \${item.date}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [

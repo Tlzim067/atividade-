@@ -62,7 +62,19 @@ class TransactionNotifier extends StateNotifier<TransactionState> {
       double income = 0.0;
       double expense = 0.0;
       for (final tx in txList) {
-        if (tx.type == 'Entrada') { income += tx.amount; } else { expense += tx.amount; }
+        if (tx.category == 'Poupança') {
+          if (tx.type == 'Entrada') {
+            expense += tx.amount;
+          } else {
+            income += tx.amount;
+          }
+        } else {
+          if (tx.type == 'Entrada') {
+            income += tx.amount;
+          } else {
+            expense += tx.amount;
+          }
+        }
       }
       state = TransactionState(
         transactions: txList,

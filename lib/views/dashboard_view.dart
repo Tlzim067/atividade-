@@ -69,7 +69,11 @@ class _DashboardViewState extends ConsumerState<DashboardView>
     final txState    = ref.watch(transactionProvider(widget.userId));
     final cryptoAsync = ref.watch(cryptoViewModelProvider);
     final recentTx   = txState.transactions.take(5).toList();
-    final totalSaved = txState.transactions.where((t) => t.category == 'Poupança').fold(0.0, (sum, t) => sum + t.amount);
+    final totalSaved = txState.transactions.where((t) => t.category == 'Poupança').fold(0.0, (sum, t) => t.type == 'Entrada' ? sum + t.amount : sum - t.amount);
+    final availableBalance = txState.transactions.where((t) => t.type == 'Entrada' && t.category != 'Poupança').fold(0.0, (sum, t) => sum + t.amount) - txState.transactions.where((t) => t.type == 'Saída' && t.category != 'Poupança').fold(0.0, (sum, t) => sum + t.amount) + txState.transactions.where((t) => t.type == 'Saída' && t.category == 'Poupança').fold(0.0, (sum, t) => sum + t.amount);
+    final normalIncome = txState.transactions.where((t) => t.type == 'Entrada' && t.category != 'Poupança').fold(0.0, (sum, t) => sum + t.amount);
+    final normalExpense = txState.transactions.where((t) => t.type == 'Saída' && t.category != 'Poupança').fold(0.0, (sum, t) => sum + t.amount);
+    final savingsWithdraw = txState.transactions.where((t) => t.type == 'Saída' && t.category == 'Poupança').fold(0.0, (sum, t) => sum + t.amount);
     final savingsRate = txState.totalIncome == 0
         ? 0.0
         : ((txState.totalIncome - txState.totalExpense) / txState.totalIncome).clamp(0.0, 1.0);
